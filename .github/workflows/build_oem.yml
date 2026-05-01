@@ -14,11 +14,11 @@ on:
       packageName:
         description: 'Package Name (包名)'
         required: true
-        default: 'com.tianque.app'
+        default: 'com.follow.clash'
       ossUrl:
         description: 'OSS URL (配置接口)'
         required: true
-        default: 'https://oss.tianque.cc/osss_config.txt'
+        default: 'https://oss.tianque.cc/oss_config.txt'
       imgbbApiKey:
         description: 'ImgBB API Key (图床Key)'
         required: true
@@ -26,15 +26,15 @@ on:
       backupUrls:
         description: 'Backup URLs (备用地址, 逗号分隔)'
         required: false
-        default: 'https://api-backup-01.tianque.cc,https://api-backup-02.tianque.cc,https://gogogo.tianquege.top'
+        default: 'https://154.219.96.225:2621,https://tq.tianquege.top,https://gogogo.tianquege.top'
       fallbackUrl:
         description: 'Fallback URL (回退地址)'
         required: false
-        default: 'https://api-backup-03.tianque.cc'
+        default: 'https://150.241.207.176:8443'
       iconUrl:
         description: 'Icon URL (图标链接, 可选)'
         required: false
-        default: 'https://oss.tianque.cc/i8.png'
+        default: 'https://oss.tianque.cc/logo1.png'
       publishRelease:
         description: 'Publish Release (是否自动发布 Release)'
         required: false
@@ -52,7 +52,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          repository: wangn9900/MOMclash
+          token: ${{ secrets.ACCESS_TOKEN }}
           submodules: recursive
+          ref: main
+          path: .
+
+      - name: Free Disk Space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf /usr/local/lib/node_modules
+          sudo rm -rf /usr/local/share/chromium
+          sudo rm -rf /usr/local/lib/codeql
+          sudo apt-get clean
+          df -h
       
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -76,6 +91,15 @@ jobs:
       - name: Get Dependencies
         run: flutter pub get
         
+      - name: Generate Code for Plugins
+        run: |
+          if [ -d "plugins/chatwoot_sdk" ]; then
+            cd plugins/chatwoot_sdk
+            flutter pub get
+            dart run build_runner build --delete-conflicting-outputs
+            cd ../..
+          fi
+          
       - name: Update Version
         run: dart run scripts/update_version.dart
         
@@ -86,7 +110,7 @@ jobs:
           VERSION=$(grep 'version:' pubspec.yaml | sed 's/version: //')
           echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
           echo "Version is $VERSION"
-        
+
       - name: Update OEM Config
         run: |
           dart run scripts/update_oem.dart \
@@ -126,41 +150,21 @@ jobs:
             echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/local.properties
           fi
 
-      - name: Build Mobile APK
-        run: flutter build apk --release --split-per-abi --dart-define=APP_ENV=stable --android-skip-build-dependency-validation
+      - name: Build APK
+        run: flutter build apk --release --split-per-abi --dart-define=APP_ENV=stable
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-
-      - name: Rename Mobile APKs
-        run: |
-          mkdir -p build/outputs/mobile
-          mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/outputs/mobile/${{ github.event.inputs.binaryName }}-Mobile-arm64-v8a.apk
-          mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk build/outputs/mobile/${{ github.event.inputs.binaryName }}-Mobile-armeabi-v7a.apk
-          mv build/app/outputs/flutter-apk/app-x86_64-release.apk build/outputs/mobile/${{ github.event.inputs.binaryName }}-Mobile-x86_64.apk
-
-      - name: Build TV APK
-        run: flutter build apk --release --split-per-abi --dart-define=APP_ENV=stable --dart-define=FORCE_TV=true --android-skip-build-dependency-validation
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-          FORCE_TV: true
-
-      - name: Rename TV APKs
-        run: |
-          mkdir -p build/outputs/tv
-          mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/outputs/tv/${{ github.event.inputs.binaryName }}-TV-arm64-v8a.apk
-          mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk build/outputs/tv/${{ github.event.inputs.binaryName }}-TV-armeabi-v7a.apk
         
       - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.event.inputs.binaryName }}-${{ env.APP_VERSION }}-Android-Combined
+          name: ${{ github.event.inputs.binaryName }}-${{ env.APP_VERSION }}-Android
           path: |
-            build/outputs/mobile/*.apk
-            build/outputs/tv/*.apk
+            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+            build/app/outputs/flutter-apk/app-x86_64-release.apk
 
   build-windows:
     name: Build Windows Client
@@ -168,7 +172,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          repository: wangn9900/MOMclash
+          token: ${{ secrets.ACCESS_TOKEN }}
           submodules: recursive
+          ref: main
+          path: .
       
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -187,7 +195,6 @@ jobs:
         run: |
           Write-Host "Installing Inno Setup 6..."
           choco install innosetup -y
-          # 验证安装
           if (Test-Path "C:\Program Files (x86)\Inno Setup 6\ISCC.exe") {
             Write-Host "Inno Setup 6 installed successfully"
           } else {
@@ -197,9 +204,19 @@ jobs:
       - name: Get Dependencies
         run: flutter pub get
         
+      - name: Generate Code for Plugins
+        shell: powershell
+        run: |
+          if (Test-Path "plugins/chatwoot_sdk") {
+            cd plugins/chatwoot_sdk
+            flutter pub get
+            dart run build_runner build --delete-conflicting-outputs
+            cd ../..
+          }
+          
       - name: Update Version
         run: dart run scripts/update_version.dart
-        
+
       - name: Get Version
         id: get_version
         shell: bash
@@ -207,7 +224,7 @@ jobs:
           VERSION=$(grep 'version:' pubspec.yaml | sed 's/version: //')
           echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
           echo "Version is $VERSION"
-        
+
       - name: Update OEM Config
         run: |
           dart run scripts/update_oem.dart `
@@ -284,6 +301,7 @@ jobs:
           $binaryName = "${{ github.event.inputs.binaryName }}"
           if ($binaryName -and $binaryName -ne "" -and $binaryName -ne "TianQue") {
             $oldExe = Join-Path $releaseDir "TianQue.exe"
+            # 动态添加版本号到 Setup exe 名字 (可选，但通常 Setup 包才带版本，主 exe 可能不带)
             $newExe = Join-Path $releaseDir "$binaryName.exe"
             
             Write-Host "Renaming TianQue.exe to $binaryName.exe"
@@ -296,6 +314,7 @@ jobs:
           }
           
           # 直接打包 Release 目录（不解压重打包）
+          # 包含版本号的 Zip 包名
           $finalZip = "${{ github.event.inputs.binaryName }}-${{ env.APP_VERSION }}-Windows.zip"
           
           Write-Host "Creating package: $finalZip"
@@ -316,8 +335,6 @@ jobs:
       - name: Copy EXE Installer
         run: |
           Write-Host "=== Looking for EXE installer ==="
-          
-          # flutter_distributor 生成的文件在 dist 目录
           $distDir = "dist"
           $binaryName = "${{ github.event.inputs.binaryName }}"
           
@@ -330,12 +347,12 @@ jobs:
               Write-Host "$($_.FullName) - $($_.Length) bytes"
             }
             
-            # 查找 exe 安装包文件
             $exeFiles = Get-ChildItem -Path $distDir -Filter "*.exe" -Recurse
             Write-Host "Found $($exeFiles.Count) exe file(s)"
             
             if ($exeFiles.Count -gt 0) {
               foreach ($exe in $exeFiles) {
+                # Setup 包添加版本号
                 $newName = "$binaryName-${{ env.APP_VERSION }}-Windows-Setup.exe"
                 Copy-Item -Path $exe.FullName -Destination $newName -Force
                 Write-Host "Copied: $($exe.FullName) -> $newName"
@@ -346,21 +363,10 @@ jobs:
             } else {
               Write-Warning "No EXE installer found in dist directory"
             }
-            
-            # 同时查找并使用 dist 目录中的 zip 文件（如果比我们打包的更完整）
-            $zipFiles = Get-ChildItem -Path $distDir -Filter "*.zip" -Recurse
-            Write-Host "Found $($zipFiles.Count) zip file(s) in dist"
-            
-            if ($zipFiles.Count -gt 0) {
-              foreach ($zip in $zipFiles) {
-                Write-Host "dist zip: $($zip.FullName) - $($zip.Length) bytes"
-              }
-            }
           } else {
-            Write-Warning "dist directory not found - flutter_distributor may not have run"
+            Write-Warning "dist directory not found"
           }
           
-          # 验证最终文件
           Write-Host ""
           Write-Host "=== Final files to upload ==="
           Get-ChildItem -Filter "$binaryName-Windows*" | ForEach-Object {
@@ -382,7 +388,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          repository: wangn9900/MOMclash
+          token: ${{ secrets.ACCESS_TOKEN }}
           submodules: recursive
+          ref: main
+          path: .
       
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -400,9 +410,26 @@ jobs:
       - name: Get Dependencies
         run: flutter pub get
         
+      - name: Generate Code for Plugins
+        run: |
+          if [ -d "plugins/chatwoot_sdk" ]; then
+            cd plugins/chatwoot_sdk
+            flutter pub get
+            dart run build_runner build --delete-conflicting-outputs
+            cd ../..
+          fi
+          
       - name: Update Version
         run: dart run scripts/update_version.dart
-        
+
+      - name: Get Version
+        id: get_version
+        shell: bash
+        run: |
+          VERSION=$(grep 'version:' pubspec.yaml | sed 's/version: //')
+          echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Version is $VERSION"
+
       - name: Update OEM Config
         run: |
           dart run scripts/update_oem.dart \
@@ -433,6 +460,7 @@ jobs:
           echo ">>> Packaging arm64 DMG..."
           cd build/macos/Build/Products/Release
           APP_NAME=$(ls -d *.app | head -n 1)
+          # 文件名包含版本号
           DMG_NAME="${{ github.event.inputs.binaryName }}-${{ env.APP_VERSION }}-arm64.dmg"
           hdiutil create -volname "${{ github.event.inputs.binaryName }}" -srcfolder "$APP_NAME" -ov -format UDZO "$DMG_NAME"
           mv "$DMG_NAME" ../../../../../
@@ -453,6 +481,7 @@ jobs:
           echo ">>> Packaging amd64 DMG..."
           cd build/macos/Build/Products/Release
           APP_NAME=$(ls -d *.app | head -n 1)
+          # 文件名包含版本号
           DMG_NAME="${{ github.event.inputs.binaryName }}-${{ env.APP_VERSION }}-amd64.dmg"
           hdiutil create -volname "${{ github.event.inputs.binaryName }}" -srcfolder "$APP_NAME" -ov -format UDZO "$DMG_NAME"
           mv "$DMG_NAME" ../../../../../
@@ -471,7 +500,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          repository: wangn9900/MOMclash
+          token: ${{ secrets.ACCESS_TOKEN }}
           submodules: recursive
+          ref: main
+          path: .
       
       - name: Install Dependencies
         run: |
@@ -494,9 +527,18 @@ jobs:
       - name: Get Dependencies
         run: flutter pub get
         
+      - name: Generate Code for Plugins
+        run: |
+          if [ -d "plugins/chatwoot_sdk" ]; then
+            cd plugins/chatwoot_sdk
+            flutter pub get
+            dart run build_runner build --delete-conflicting-outputs
+            cd ../..
+          fi
+          
       - name: Update Version
         run: dart run scripts/update_version.dart
-        
+
       - name: Get Version
         id: get_version
         shell: bash
@@ -504,7 +546,7 @@ jobs:
           VERSION=$(grep 'version:' pubspec.yaml | sed 's/version: //')
           echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
           echo "Version is $VERSION"
-        
+
       - name: Update OEM Config
         run: |
           dart run scripts/update_oem.dart \
@@ -590,7 +632,7 @@ jobs:
           # 复制所有构建文件到 release 目录
           for dir in ./all-artifacts/*/; do
             echo "Processing: $dir"
-            # 复制目录中的所有文件（包括 exe 安装包）
+            # 复制目录中的所有文件
             find "$dir" -type f \( -name "*.apk" -o -name "*.zip" -o -name "*.dmg" -o -name "*.tar.gz" -o -name "*.exe" \) -exec cp {} ./release/ \;
           done
           
@@ -601,9 +643,6 @@ jobs:
       - name: Upload Merged Artifacts
         uses: actions/upload-artifact@v4
         with:
-          # 没有直接的方法在这里获取版本号，除非我们从文件名中提取或者再次运行 get_version
-          # 但因为这是合并步骤，我们简单地使用 Generic Name，里面的文件是带版本的即可
-          # 或者，我们可以假设所有文件都带有相同的版本号
           name: ${{ github.event.inputs.binaryName }}-All-Platforms
           path: ./release/
           retention-days: 30
@@ -634,19 +673,8 @@ jobs:
              echo "Could not find file with version string!"
              exit 1
           fi
-          # 提取版本号: 假设格式为Name-VERSION-Platform.ext
-          # 我们取第一个 '-' 和最后一个 '-' 中间的部分? 不太可靠
-          # 既然我们知道格式是 BinaryName-VERSION-Platform
-          # 我们可以去掉 BinaryName- (前缀) 和 -Platform (后缀)
           
-          BINARY_NAME="${{ github.event.inputs.binaryName }}"
-          # 移除前缀
-          TEMP="${FILE#$BINARY_NAME-}"
-          # 移除后缀 (即最后一个 - 及其后面的所有内容)
-          VERSION="${TEMP%-*-*}" 
-          # 上面的逻辑可能对 .tar.gz 不友好，或者对 Windows-Setup 不友好
-          
-          # 更简单的方法：直接用正则提取含有 + 号的段
+          # 直接用正则提取含有 + 号的段
           VERSION=$(echo "$FILE" | grep -oP '\d+\.\d+\.\d+\+\d+')
           
           echo "Detected version: $VERSION"
@@ -673,3 +701,4 @@ jobs:
           prerelease: false
           token: ${{ secrets.TIANQUECLIENT }}
           repository: tianquege/TianQueClient
+
