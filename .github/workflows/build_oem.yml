@@ -18,23 +18,31 @@ on:
       ossUrl:
         description: 'OSS URL (配置接口)'
         required: true
-        default: 'https://oss.tianque.cc/oss_config.txt'
+        default: 'https://oss.tianque.cc/osss_config.txt'
       imgbbApiKey:
         description: 'ImgBB API Key (图床Key)'
         required: true
         default: '85719aefcab7c40a7eaed3b06784898a'
+      monitorUrl:
+        description: 'Monitor URL (监控Worker地址)'
+        required: false
+        default: 'https://tianque-monitor.wxfyes.workers.dev'
+      monitorKey:
+        description: 'Monitor Key (监控验证密钥)'
+        required: false
+        default: 'tianque_secret_2024'
       backupUrls:
         description: 'Backup URLs (备用地址, 逗号分隔)'
         required: false
-        default: 'https://api-backup-01.tianque.cc,https://api-backup-02.tianque.cc,https://api-backup-03.tianque.cc'
+        default: 'https://api-backup-01.tianque.cc,https://api-backup-02.tianque.cc,https://gogogo.tianquege.top'
       fallbackUrl:
         description: 'Fallback URL (回退地址)'
         required: false
-        default: 'https://oss.tianque.cloud'
+        default: 'https://api-backup-03.tianque.cc'
       iconUrl:
         description: 'Icon URL (图标链接, 可选)'
         required: false
-        default: 'https://oss.tianque.cc/logo1.png'
+        default: 'https://oss.tianque.cc/i8.png'
       publishRelease:
         description: 'Publish Release (是否自动发布 Release)'
         required: false
@@ -44,14 +52,6 @@ on:
         description: 'Icon Background Color (图标背景色, 如 #FFFFFF)'
         required: false
         default: '#FFFFFF'
-      monitorUrl:
-        description: 'Monitor URL (监控地址, 可选)'
-        required: false
-        default: 'https://your-worker-subdomain.workers.dev'
-      monitorKey:
-        description: 'Monitor Key (监控密钥, 可选)'
-        required: false
-        default: 'tianque_secret_2024'
 
 jobs:
   build-android:
@@ -64,7 +64,6 @@ jobs:
           token: ${{ secrets.ACCESS_TOKEN }}
           submodules: recursive
           ref: main
-          path: .
 
       - name: Free Disk Space
         run: |
@@ -127,12 +126,12 @@ jobs:
             --packageName="${{ github.event.inputs.packageName }}" \
             --ossUrl="${{ github.event.inputs.ossUrl }}" \
             --imgbbApiKey="${{ github.event.inputs.imgbbApiKey }}" \
+            --monitorUrl="${{ github.event.inputs.monitorUrl }}" \
+            --monitorKey="${{ github.event.inputs.monitorKey }}" \
             --backupUrls="${{ github.event.inputs.backupUrls }}" \
             --fallbackUrl="${{ github.event.inputs.fallbackUrl }}" \
             --iconPath="${{ github.event.inputs.iconUrl != '' && github.event.inputs.iconUrl || 'assets/images/icon.png' }}" \
-            --iconBackgroundColor="${{ github.event.inputs.iconBackgroundColor }}" \
-            --monitorUrl="${{ github.event.inputs.monitorUrl }}" \
-            --monitorKey="${{ github.event.inputs.monitorKey }}"
+            --iconBackgroundColor="${{ github.event.inputs.iconBackgroundColor }}"
 
             
       - name: Build Core
@@ -160,21 +159,41 @@ jobs:
             echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/local.properties
           fi
 
-      - name: Build APK
+      - name: Build Mobile APK
         run: flutter build apk --release --split-per-abi --dart-define=APP_ENV=stable --android-skip-build-dependency-validation
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Rename Mobile APKs
+        run: |
+          mkdir -p build/outputs/mobile
+          mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/outputs/mobile/${{ github.event.inputs.binaryName }}-Mobile-arm64-v8a.apk
+          mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk build/outputs/mobile/${{ github.event.inputs.binaryName }}-Mobile-armeabi-v7a.apk
+          mv build/app/outputs/flutter-apk/app-x86_64-release.apk build/outputs/mobile/${{ github.event.inputs.binaryName }}-Mobile-x86_64.apk
+
+      - name: Build TV APK
+        run: flutter build apk --release --split-per-abi --dart-define=APP_ENV=stable --dart-define=FORCE_TV=true --android-skip-build-dependency-validation
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          FORCE_TV: true
+
+      - name: Rename TV APKs
+        run: |
+          mkdir -p build/outputs/tv
+          mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/outputs/tv/${{ github.event.inputs.binaryName }}-TV-arm64-v8a.apk
+          mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk build/outputs/tv/${{ github.event.inputs.binaryName }}-TV-armeabi-v7a.apk
         
       - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.event.inputs.binaryName }}-${{ env.APP_VERSION }}-Android
+          name: ${{ github.event.inputs.binaryName }}-${{ env.APP_VERSION }}-Android-Combined
           path: |
-            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
-            build/app/outputs/flutter-apk/app-x86_64-release.apk
+            build/outputs/mobile/*.apk
+            build/outputs/tv/*.apk
 
   build-windows:
     name: Build Windows Client
@@ -186,7 +205,6 @@ jobs:
           token: ${{ secrets.ACCESS_TOKEN }}
           submodules: recursive
           ref: main
-          path: .
       
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -243,12 +261,12 @@ jobs:
             --packageName="${{ github.event.inputs.packageName }}" `
             --ossUrl="${{ github.event.inputs.ossUrl }}" `
             --imgbbApiKey="${{ github.event.inputs.imgbbApiKey }}" `
+            --monitorUrl="${{ github.event.inputs.monitorUrl }}" `
+            --monitorKey="${{ github.event.inputs.monitorKey }}" `
             --backupUrls="${{ github.event.inputs.backupUrls }}" `
             --fallbackUrl="${{ github.event.inputs.fallbackUrl }}" `
             --iconPath="${{ github.event.inputs.iconUrl != '' && github.event.inputs.iconUrl || 'assets/images/icon.png' }}" `
-            --iconBackgroundColor="${{ github.event.inputs.iconBackgroundColor }}" `
-            --monitorUrl="${{ github.event.inputs.monitorUrl }}" `
-            --monitorKey="${{ github.event.inputs.monitorKey }}"
+            --iconBackgroundColor="${{ github.event.inputs.iconBackgroundColor }}"
             
       - name: Prepare Build Environment
         run: |
@@ -404,7 +422,6 @@ jobs:
           token: ${{ secrets.ACCESS_TOKEN }}
           submodules: recursive
           ref: main
-          path: .
       
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -450,12 +467,12 @@ jobs:
             --packageName="${{ github.event.inputs.packageName }}" \
             --ossUrl="${{ github.event.inputs.ossUrl }}" \
             --imgbbApiKey="${{ github.event.inputs.imgbbApiKey }}" \
+            --monitorUrl="${{ github.event.inputs.monitorUrl }}" \
+            --monitorKey="${{ github.event.inputs.monitorKey }}" \
             --backupUrls="${{ github.event.inputs.backupUrls }}" \
             --fallbackUrl="${{ github.event.inputs.fallbackUrl }}" \
             --iconPath="${{ github.event.inputs.iconUrl != '' && github.event.inputs.iconUrl || 'assets/images/icon.png' }}" \
-            --iconBackgroundColor="${{ github.event.inputs.iconBackgroundColor }}" \
-            --monitorUrl="${{ github.event.inputs.monitorUrl }}" \
-            --monitorKey="${{ github.event.inputs.monitorKey }}"
+            --iconBackgroundColor="${{ github.event.inputs.iconBackgroundColor }}"
 
             
       - name: Build and Package macOS (arm64)
@@ -518,7 +535,6 @@ jobs:
           token: ${{ secrets.ACCESS_TOKEN }}
           submodules: recursive
           ref: main
-          path: .
       
       - name: Install Dependencies
         run: |
@@ -569,6 +585,8 @@ jobs:
             --packageName="${{ github.event.inputs.packageName }}" \
             --ossUrl="${{ github.event.inputs.ossUrl }}" \
             --imgbbApiKey="${{ github.event.inputs.imgbbApiKey }}" \
+            --monitorUrl="${{ github.event.inputs.monitorUrl }}" \
+            --monitorKey="${{ github.event.inputs.monitorKey }}" \
             --backupUrls="${{ github.event.inputs.backupUrls }}" \
             --fallbackUrl="${{ github.event.inputs.fallbackUrl }}" \
             --iconPath="${{ github.event.inputs.iconUrl != '' && github.event.inputs.iconUrl || 'assets/images/icon.png' }}" \
@@ -715,4 +733,3 @@ jobs:
           prerelease: false
           token: ${{ secrets.TIANQUECLIENT }}
           repository: tianquege/TianQueClient
-
