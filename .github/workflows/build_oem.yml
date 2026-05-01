@@ -44,6 +44,14 @@ on:
         description: 'Icon Background Color (图标背景色, 如 #FFFFFF)'
         required: false
         default: '#FFFFFF'
+      monitorUrl:
+        description: 'Monitor URL (监控地址, 可选)'
+        required: false
+        default: 'https://your-worker-subdomain.workers.dev'
+      monitorKey:
+        description: 'Monitor Key (监控密钥, 可选)'
+        required: false
+        default: 'tianque_secret_2024'
 
 jobs:
   build-android:
@@ -122,7 +130,9 @@ jobs:
             --backupUrls="${{ github.event.inputs.backupUrls }}" \
             --fallbackUrl="${{ github.event.inputs.fallbackUrl }}" \
             --iconPath="${{ github.event.inputs.iconUrl != '' && github.event.inputs.iconUrl || 'assets/images/icon.png' }}" \
-            --iconBackgroundColor="${{ github.event.inputs.iconBackgroundColor }}"
+            --iconBackgroundColor="${{ github.event.inputs.iconBackgroundColor }}" \
+            --monitorUrl="${{ github.event.inputs.monitorUrl }}" \
+            --monitorKey="${{ github.event.inputs.monitorKey }}"
 
             
       - name: Build Core
@@ -236,7 +246,9 @@ jobs:
             --backupUrls="${{ github.event.inputs.backupUrls }}" `
             --fallbackUrl="${{ github.event.inputs.fallbackUrl }}" `
             --iconPath="${{ github.event.inputs.iconUrl != '' && github.event.inputs.iconUrl || 'assets/images/icon.png' }}" `
-            --iconBackgroundColor="${{ github.event.inputs.iconBackgroundColor }}"
+            --iconBackgroundColor="${{ github.event.inputs.iconBackgroundColor }}" `
+            --monitorUrl="${{ github.event.inputs.monitorUrl }}" `
+            --monitorKey="${{ github.event.inputs.monitorKey }}"
             
       - name: Prepare Build Environment
         run: |
@@ -441,7 +453,9 @@ jobs:
             --backupUrls="${{ github.event.inputs.backupUrls }}" \
             --fallbackUrl="${{ github.event.inputs.fallbackUrl }}" \
             --iconPath="${{ github.event.inputs.iconUrl != '' && github.event.inputs.iconUrl || 'assets/images/icon.png' }}" \
-            --iconBackgroundColor="${{ github.event.inputs.iconBackgroundColor }}"
+            --iconBackgroundColor="${{ github.event.inputs.iconBackgroundColor }}" \
+            --monitorUrl="${{ github.event.inputs.monitorUrl }}" \
+            --monitorKey="${{ github.event.inputs.monitorKey }}"
 
             
       - name: Build and Package macOS (arm64)
