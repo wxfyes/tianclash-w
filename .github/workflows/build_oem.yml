@@ -14,7 +14,7 @@ on:
       packageName:
         description: 'Package Name (包名)'
         required: true
-        default: 'com.follow.clash'
+        default: 'com.tianque.app'
       ossUrl:
         description: 'OSS URL (配置接口)'
         required: true
