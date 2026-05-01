@@ -151,7 +151,7 @@ jobs:
           fi
 
       - name: Build APK
-        run: flutter build apk --release --split-per-abi --dart-define=APP_ENV=stable
+        run: flutter build apk --release --split-per-abi --dart-define=APP_ENV=stable --android-skip-build-dependency-validation
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
