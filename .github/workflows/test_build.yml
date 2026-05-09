@@ -1,0 +1,146 @@
+name: Test Build (Artifacts Only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      appName:
+        description: 'App Name (测试应用名称)'
+        required: true
+        default: '天阙测试'
+      binaryName:
+        description: 'Binary Name (测试文件名)'
+        required: true
+        default: 'TianQueTest'
+      packageName:
+        description: 'Package Name (包名)'
+        required: true
+        default: 'com.tianque.test'
+
+jobs:
+  build-android:
+    name: Android Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: wangn9900/MOMclash
+          token: ${{ secrets.ACCESS_TOKEN }}
+          submodules: recursive
+          ref: main
+
+      - name: Setup Java, Go, Flutter
+        uses: actions/setup-java@v4
+        with: {distribution: 'zulu', java-version: '17'}
+      - uses: actions/setup-go@v5
+        with: {go-version: '1.24.0'}
+      - uses: subosito/flutter-action@v2
+        with: {channel: 'stable', cache: true}
+          
+      - name: Prepare and Build
+        run: |
+          flutter pub get
+          dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="${{ github.event.inputs.packageName }}" --ossUrl="https://example.com" --imgbbApiKey="test"
+          dart setup.dart android --out core
+          flutter build apk --release --split-per-abi --android-skip-build-dependency-validation
+        
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Android-Test-Build
+          path: build/app/outputs/flutter-apk/*.apk
+
+  build-windows:
+    name: Windows Build
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: wangn9900/MOMclash
+          token: ${{ secrets.ACCESS_TOKEN }}
+          submodules: recursive
+          ref: main
+      
+      - uses: actions/setup-go@v5
+        with: {go-version: '1.24.0'}
+      - uses: subosito/flutter-action@v2
+        with: {channel: 'stable', cache: true}
+          
+      - name: Build
+        run: |
+          flutter pub get
+          dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="${{ github.event.inputs.packageName }}" --ossUrl="https://example.com" --imgbbApiKey="test"
+          dart setup.dart windows --arch amd64 --env stable
+          
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-Test-Build
+          path: build/windows/x64/runner/Release/*
+
+  build-macos:
+    name: macOS Build
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: wangn9900/MOMclash
+          token: ${{ secrets.ACCESS_TOKEN }}
+          submodules: recursive
+          ref: main
+      
+      - uses: actions/setup-go@v5
+        with: {go-version: '1.24.0'}
+      - uses: subosito/flutter-action@v2
+        with: {channel: 'stable', cache: true}
+          
+      - name: Build
+        run: |
+          flutter pub get
+          dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="${{ github.event.inputs.packageName }}" --ossUrl="https://example.com" --imgbbApiKey="test"
+          dart setup.dart macos --out core --arch arm64
+          cp libclash/macos/arm64/FlClashCore libclash/macos/FlClashCore
+          flutter build macos --release
+          
+      - name: Package DMG
+        run: |
+          cd build/macos/Build/Products/Release
+          APP_NAME=$(ls -d *.app | head -n 1)
+          hdiutil create -volname "${{ github.event.inputs.binaryName }}" -srcfolder "$APP_NAME" -ov -format UDZO "Test-macOS.dmg"
+          
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macOS-Test-Build
+          path: build/macos/Build/Products/Release/Test-macOS.dmg
+
+  build-linux:
+    name: Linux Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: wangn9900/MOMclash
+          token: ${{ secrets.ACCESS_TOKEN }}
+          submodules: recursive
+          ref: main
+      
+      - name: Install Deps
+        run: sudo apt-get update && sudo apt-get install -y ninja-build libgtk-3-dev libayatana-appindicator3-dev liblzma-dev libkeybinder-3.0-dev libsecret-1-dev
+          
+      - uses: actions/setup-go@v5
+        with: {go-version: '1.24.0'}
+      - uses: subosito/flutter-action@v2
+        with: {channel: 'stable', cache: true}
+          
+      - name: Build
+        run: |
+          flutter pub get
+          dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="${{ github.event.inputs.packageName }}" --ossUrl="https://example.com" --imgbbApiKey="test"
+          dart setup.dart linux --out core --arch amd64
+          flutter build linux --release
+          
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Linux-Test-Build
+          path: build/linux/x64/release/bundle/*
