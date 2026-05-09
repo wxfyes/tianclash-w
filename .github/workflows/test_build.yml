@@ -121,21 +121,33 @@ jobs:
         run: |
           flutter pub get
           dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="com.tianque.app" --ossUrl="https://example.com" --imgbbApiKey="test"
+          
+          # Build arm64
           dart setup.dart macos --out core --arch arm64
           cp libclash/macos/arm64/FlClashCore libclash/macos/FlClashCore
           flutter build macos --release
-          
-      - name: Package
-        run: |
           cd build/macos/Build/Products/Release
-          APP_NAME=$(ls -d *.app | head -n 1)
-          hdiutil create -volname "${{ github.event.inputs.binaryName }}" -srcfolder "$APP_NAME" -ov -format UDZO "Test-macOS.dmg"
+          hdiutil create -volname "${{ github.event.inputs.binaryName }}" -srcfolder "$(ls -d *.app)" -ov -format UDZO "Test-macOS-arm64.dmg"
+          mv "Test-macOS-arm64.dmg" ../../../../../
+          
+          # Build amd64
+          cd ../../../../../
+          flutter clean
+          flutter pub get
+          dart setup.dart macos --out core --arch amd64
+          cp libclash/macos/amd64/FlClashCore libclash/macos/FlClashCore
+          flutter build macos --release
+          cd build/macos/Build/Products/Release
+          hdiutil create -volname "${{ github.event.inputs.binaryName }}" -srcfolder "$(ls -d *.app)" -ov -format UDZO "Test-macOS-amd64.dmg"
+          mv "Test-macOS-amd64.dmg" ../../../../../
           
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: macOS-Test-Build
-          path: build/macos/Build/Products/Release/Test-macOS.dmg
+          path: |
+            Test-macOS-arm64.dmg
+            Test-macOS-amd64.dmg
 
   build-linux:
     name: Linux Build
