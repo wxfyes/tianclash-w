@@ -49,10 +49,19 @@ jobs:
       - uses: subosito/flutter-action@v2
         with: {channel: 'stable', cache: true}
           
+      - name: Setup Android Signing
+        run: |
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/keystore.jks
+            echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/local.properties
+            echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> android/local.properties
+            echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/local.properties
+          fi
+
       - name: Build
         run: |
           flutter pub get
-          dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="com.tianque.test" --ossUrl="https://example.com" --imgbbApiKey="test"
+          dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="com.tianque.app" --ossUrl="https://example.com" --imgbbApiKey="test"
           dart setup.dart android --out core
           flutter build apk --release --split-per-abi --android-skip-build-dependency-validation
         
@@ -82,7 +91,7 @@ jobs:
       - name: Build
         run: |
           flutter pub get
-          dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="com.tianque.test" --ossUrl="https://example.com" --imgbbApiKey="test"
+          dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="com.tianque.app" --ossUrl="https://example.com" --imgbbApiKey="test"
           dart setup.dart windows --arch amd64 --env stable
           
       - name: Upload
@@ -111,7 +120,7 @@ jobs:
       - name: Build
         run: |
           flutter pub get
-          dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="com.tianque.test" --ossUrl="https://example.com" --imgbbApiKey="test"
+          dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="com.tianque.app" --ossUrl="https://example.com" --imgbbApiKey="test"
           dart setup.dart macos --out core --arch arm64
           cp libclash/macos/arm64/FlClashCore libclash/macos/FlClashCore
           flutter build macos --release
@@ -151,7 +160,7 @@ jobs:
       - name: Build
         run: |
           flutter pub get
-          dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="com.tianque.test" --ossUrl="https://example.com" --imgbbApiKey="test"
+          dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="com.tianque.app" --ossUrl="https://example.com" --imgbbApiKey="test"
           dart setup.dart linux --out core --arch amd64
           flutter build linux --release
           
