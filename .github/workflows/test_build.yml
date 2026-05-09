@@ -61,6 +61,7 @@ jobs:
       - name: Build
         run: |
           flutter pub get
+          flutter pub run build_runner build --delete-conflicting-outputs
           dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="com.tianque.app" --ossUrl="https://example.com" --imgbbApiKey="test"
           dart setup.dart android --out core
           flutter build apk --release --split-per-abi --android-skip-build-dependency-validation
@@ -91,6 +92,7 @@ jobs:
       - name: Build
         run: |
           flutter pub get
+          flutter pub run build_runner build --delete-conflicting-outputs
           dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="com.tianque.app" --ossUrl="https://example.com" --imgbbApiKey="test"
           dart setup.dart windows --arch amd64 --env stable
           
@@ -120,6 +122,7 @@ jobs:
       - name: Build
         run: |
           flutter pub get
+          flutter pub run build_runner build --delete-conflicting-outputs
           dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="com.tianque.app" --ossUrl="https://example.com" --imgbbApiKey="test"
           
           # Build arm64
@@ -180,6 +183,7 @@ jobs:
       - name: Build
         run: |
           flutter pub get
+          flutter pub run build_runner build --delete-conflicting-outputs
           dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="com.tianque.app" --ossUrl="https://example.com" --imgbbApiKey="test"
           dart setup.dart linux --out core --arch amd64
           flutter build linux --release
