@@ -11,14 +11,27 @@ on:
         description: 'Binary Name (测试文件名)'
         required: true
         default: 'TianQueTest'
-      packageName:
-        description: 'Package Name (包名)'
-        required: true
-        default: 'com.tianque.test'
+      buildAndroid:
+        description: '编译 Android'
+        type: boolean
+        default: true
+      buildWindows:
+        description: '编译 Windows'
+        type: boolean
+        default: true
+      buildMacOS:
+        description: '编译 macOS'
+        type: boolean
+        default: false
+      buildLinux:
+        description: '编译 Linux'
+        type: boolean
+        default: false
 
 jobs:
   build-android:
     name: Android Build
+    if: ${{ github.event.inputs.buildAndroid == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,7 +41,7 @@ jobs:
           submodules: recursive
           ref: main
 
-      - name: Setup Java, Go, Flutter
+      - name: Setup Environment
         uses: actions/setup-java@v4
         with: {distribution: 'zulu', java-version: '17'}
       - uses: actions/setup-go@v5
@@ -36,14 +49,14 @@ jobs:
       - uses: subosito/flutter-action@v2
         with: {channel: 'stable', cache: true}
           
-      - name: Prepare and Build
+      - name: Build
         run: |
           flutter pub get
-          dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="${{ github.event.inputs.packageName }}" --ossUrl="https://example.com" --imgbbApiKey="test"
+          dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="com.tianque.test" --ossUrl="https://example.com" --imgbbApiKey="test"
           dart setup.dart android --out core
           flutter build apk --release --split-per-abi --android-skip-build-dependency-validation
         
-      - name: Upload Artifact
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: Android-Test-Build
@@ -51,6 +64,7 @@ jobs:
 
   build-windows:
     name: Windows Build
+    if: ${{ github.event.inputs.buildWindows == 'true' }}
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
@@ -68,10 +82,10 @@ jobs:
       - name: Build
         run: |
           flutter pub get
-          dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="${{ github.event.inputs.packageName }}" --ossUrl="https://example.com" --imgbbApiKey="test"
+          dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="com.tianque.test" --ossUrl="https://example.com" --imgbbApiKey="test"
           dart setup.dart windows --arch amd64 --env stable
           
-      - name: Upload Artifact
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: Windows-Test-Build
@@ -79,6 +93,7 @@ jobs:
 
   build-macos:
     name: macOS Build
+    if: ${{ github.event.inputs.buildMacOS == 'true' }}
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -96,18 +111,18 @@ jobs:
       - name: Build
         run: |
           flutter pub get
-          dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="${{ github.event.inputs.packageName }}" --ossUrl="https://example.com" --imgbbApiKey="test"
+          dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="com.tianque.test" --ossUrl="https://example.com" --imgbbApiKey="test"
           dart setup.dart macos --out core --arch arm64
           cp libclash/macos/arm64/FlClashCore libclash/macos/FlClashCore
           flutter build macos --release
           
-      - name: Package DMG
+      - name: Package
         run: |
           cd build/macos/Build/Products/Release
           APP_NAME=$(ls -d *.app | head -n 1)
           hdiutil create -volname "${{ github.event.inputs.binaryName }}" -srcfolder "$APP_NAME" -ov -format UDZO "Test-macOS.dmg"
           
-      - name: Upload Artifact
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: macOS-Test-Build
@@ -115,6 +130,7 @@ jobs:
 
   build-linux:
     name: Linux Build
+    if: ${{ github.event.inputs.buildLinux == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -135,11 +151,11 @@ jobs:
       - name: Build
         run: |
           flutter pub get
-          dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="${{ github.event.inputs.packageName }}" --ossUrl="https://example.com" --imgbbApiKey="test"
+          dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="com.tianque.test" --ossUrl="https://example.com" --imgbbApiKey="test"
           dart setup.dart linux --out core --arch amd64
           flutter build linux --release
           
-      - name: Upload Artifact
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: Linux-Test-Build
