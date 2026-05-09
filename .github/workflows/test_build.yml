@@ -124,9 +124,9 @@ jobs:
           
           # Build arm64
           dart setup.dart macos --out core --arch arm64
-          # 根据日志，它直接生成到了 core/TianQueCore
+          # 经过深入分析 setup.dart 源码，路径应该是 core/macos/TianQueCore
           mkdir -p libclash/macos
-          cp core/TianQueCore libclash/macos/FlClashCore
+          cp core/macos/TianQueCore libclash/macos/FlClashCore
           chmod +x libclash/macos/FlClashCore
           flutter build macos --release
           cd build/macos/Build/Products/Release
@@ -138,7 +138,7 @@ jobs:
           flutter clean
           flutter pub get
           dart setup.dart macos --out core --arch amd64
-          cp core/TianQueCore libclash/macos/FlClashCore
+          cp core/macos/TianQueCore libclash/macos/FlClashCore
           chmod +x libclash/macos/FlClashCore
           flutter build macos --release
           cd build/macos/Build/Products/Release
