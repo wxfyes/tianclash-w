@@ -124,9 +124,11 @@ jobs:
           
           # Build arm64
           dart setup.dart macos --out core --arch arm64
-          # 经过深入分析 setup.dart 源码，路径应该是 core/macos/TianQueCore
+          # 硬核搜寻：只要你编出来了，我就能找到你
           mkdir -p libclash/macos
-          cp core/macos/TianQueCore libclash/macos/FlClashCore
+          CORE_PATH=$(find core -name "TianQueCore" | head -n 1)
+          echo "Found Core at: $CORE_PATH"
+          cp "$CORE_PATH" libclash/macos/FlClashCore
           chmod +x libclash/macos/FlClashCore
           flutter build macos --release
           cd build/macos/Build/Products/Release
@@ -138,7 +140,9 @@ jobs:
           flutter clean
           flutter pub get
           dart setup.dart macos --out core --arch amd64
-          cp core/macos/TianQueCore libclash/macos/FlClashCore
+          CORE_PATH_AMD=$(find core -name "TianQueCore" | head -n 1)
+          echo "Found Core at: $CORE_PATH_AMD"
+          cp "$CORE_PATH_AMD" libclash/macos/FlClashCore
           chmod +x libclash/macos/FlClashCore
           flutter build macos --release
           cd build/macos/Build/Products/Release

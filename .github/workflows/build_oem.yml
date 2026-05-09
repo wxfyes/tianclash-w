@@ -480,7 +480,8 @@ jobs:
           echo ">>> Building arm64 Core..."
           dart setup.dart macos --out core --arch arm64
           mkdir -p libclash/macos
-          cp core/macos/TianQueCore libclash/macos/FlClashCore
+          CORE_PATH=$(find core -name "TianQueCore" | head -n 1)
+          cp "$CORE_PATH" libclash/macos/FlClashCore
           chmod +x libclash/macos/FlClashCore
           
           echo ">>> Building Flutter App (arm64 assets)..."
@@ -503,7 +504,8 @@ jobs:
           flutter clean
           flutter pub get
           dart setup.dart macos --out core --arch amd64
-          cp core/macos/TianQueCore libclash/macos/FlClashCore
+          CORE_PATH_AMD=$(find core -name "TianQueCore" | head -n 1)
+          cp "$CORE_PATH_AMD" libclash/macos/FlClashCore
           chmod +x libclash/macos/FlClashCore
           
           echo ">>> Building Flutter App (amd64 assets)..."
