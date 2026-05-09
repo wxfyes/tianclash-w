@@ -124,9 +124,9 @@ jobs:
           
           # Build arm64
           dart setup.dart macos --out core --arch arm64
-          # setup.dart 会生成到 core/macos/arm64/TianQueCore
+          # 根据日志，它直接生成到了 core/TianQueCore
           mkdir -p libclash/macos
-          cp core/macos/arm64/TianQueCore libclash/macos/FlClashCore
+          cp core/TianQueCore libclash/macos/FlClashCore
           chmod +x libclash/macos/FlClashCore
           flutter build macos --release
           cd build/macos/Build/Products/Release
@@ -138,7 +138,7 @@ jobs:
           flutter clean
           flutter pub get
           dart setup.dart macos --out core --arch amd64
-          cp core/macos/amd64/TianQueCore libclash/macos/FlClashCore
+          cp core/TianQueCore libclash/macos/FlClashCore
           chmod +x libclash/macos/FlClashCore
           flutter build macos --release
           cd build/macos/Build/Products/Release
