@@ -124,7 +124,10 @@ jobs:
           
           # Build arm64
           dart setup.dart macos --out core --arch arm64
-          cp libclash/macos/arm64/FlClashCore libclash/macos/FlClashCore
+          # setup.dart 会生成到 core/macos/arm64/TianQueCore
+          mkdir -p libclash/macos
+          cp core/macos/arm64/TianQueCore libclash/macos/FlClashCore
+          chmod +x libclash/macos/FlClashCore
           flutter build macos --release
           cd build/macos/Build/Products/Release
           hdiutil create -volname "${{ github.event.inputs.binaryName }}" -srcfolder "$(ls -d *.app)" -ov -format UDZO "Test-macOS-arm64.dmg"
@@ -135,7 +138,8 @@ jobs:
           flutter clean
           flutter pub get
           dart setup.dart macos --out core --arch amd64
-          cp libclash/macos/amd64/FlClashCore libclash/macos/FlClashCore
+          cp core/macos/amd64/TianQueCore libclash/macos/FlClashCore
+          chmod +x libclash/macos/FlClashCore
           flutter build macos --release
           cd build/macos/Build/Products/Release
           hdiutil create -volname "${{ github.event.inputs.binaryName }}" -srcfolder "$(ls -d *.app)" -ov -format UDZO "Test-macOS-amd64.dmg"
