@@ -154,9 +154,12 @@ jobs:
           mkdir -p libclash/macos
           CORE_PATH=$(find . -name "TianQueCore" | head -n 1)
           echo "Found Core at: $CORE_PATH"
+          TARGET_PATH="libclash/macos/TianQueCore"
           mkdir -p libclash/macos
-          cp "$CORE_PATH" libclash/macos/TianQueCore
-          chmod +x libclash/macos/TianQueCore
+          if [ "$CORE_PATH" != "./$TARGET_PATH" ] && [ "$CORE_PATH" != "$TARGET_PATH" ]; then
+            cp "$CORE_PATH" "$TARGET_PATH"
+          fi
+          chmod +x "$TARGET_PATH"
           flutter build macos --release
           cd build/macos/Build/Products/Release
           hdiutil create -volname "${{ github.event.inputs.binaryName }}" -srcfolder "$(ls -d *.app)" -ov -format UDZO "Test-macOS-arm64.dmg"
@@ -169,8 +172,11 @@ jobs:
           dart setup.dart macos --out core --arch amd64
           CORE_PATH_AMD=$(find . -name "TianQueCore" | head -n 1)
           echo "Found Core at: $CORE_PATH_AMD"
-          cp "$CORE_PATH_AMD" libclash/macos/TianQueCore
-          chmod +x libclash/macos/TianQueCore
+          TARGET_PATH_AMD="libclash/macos/TianQueCore"
+          if [ "$CORE_PATH_AMD" != "./$TARGET_PATH_AMD" ] && [ "$CORE_PATH_AMD" != "$TARGET_PATH_AMD" ]; then
+            cp "$CORE_PATH_AMD" "$TARGET_PATH_AMD"
+          fi
+          chmod +x "$TARGET_PATH_AMD"
           flutter build macos --release
           cd build/macos/Build/Products/Release
           hdiutil create -volname "${{ github.event.inputs.binaryName }}" -srcfolder "$(ls -d *.app)" -ov -format UDZO "Test-macOS-amd64.dmg"

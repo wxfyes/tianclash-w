@@ -283,8 +283,21 @@ jobs:
             
       - name: Build Windows
         run: |
-          # 使用与主构建相同的方式编译核心和应用
+          # 1. 插件代码生成
+          cd plugins/chatwoot_sdk
+          flutter pub get
+          flutter pub run build_runner build --delete-conflicting-outputs
+          cd ../..
+          
+          # 2. 生成主项目代码
+          flutter pub get
+          flutter pub run build_runner build --delete-conflicting-outputs
+          
+          # 3. 编译核心
           dart setup.dart windows --arch amd64 --env stable
+          
+          # 4. 编译 Flutter App
+          flutter build windows --release --dart-define=APP_ENV=stable
           
       - name: Prepare Final Package
         run: |
@@ -481,9 +494,12 @@ jobs:
           dart setup.dart macos --out core --arch arm64
           mkdir -p libclash/macos
           CORE_PATH=$(find . -name "TianQueCore" | head -n 1)
+          TARGET_PATH="libclash/macos/TianQueCore"
           mkdir -p libclash/macos
-          cp "$CORE_PATH" libclash/macos/TianQueCore
-          chmod +x libclash/macos/TianQueCore
+          if [ "$CORE_PATH" != "./$TARGET_PATH" ] && [ "$CORE_PATH" != "$TARGET_PATH" ]; then
+            cp "$CORE_PATH" "$TARGET_PATH"
+          fi
+          chmod +x "$TARGET_PATH"
           
           echo ">>> Building Flutter App (arm64 assets)..."
           flutter clean
@@ -514,8 +530,11 @@ jobs:
           flutter pub get
           dart setup.dart macos --out core --arch amd64
           CORE_PATH_AMD=$(find . -name "TianQueCore" | head -n 1)
-          cp "$CORE_PATH_AMD" libclash/macos/TianQueCore
-          chmod +x libclash/macos/TianQueCore
+          TARGET_PATH_AMD="libclash/macos/TianQueCore"
+          if [ "$CORE_PATH_AMD" != "./$TARGET_PATH_AMD" ] && [ "$CORE_PATH_AMD" != "$TARGET_PATH_AMD" ]; then
+            cp "$CORE_PATH_AMD" "$TARGET_PATH_AMD"
+          fi
+          chmod +x "$TARGET_PATH_AMD"
           
           echo ">>> Building Flutter App (amd64 assets)..."
           flutter clean
