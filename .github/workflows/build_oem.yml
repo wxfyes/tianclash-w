@@ -317,14 +317,22 @@ jobs:
             Write-Host "$($_.FullName) - $($_.Length) bytes"
           }
           
-          # 验证关键文件存在
+          # 验证并拷贝关键文件
           $requiredFiles = @("TianQue.exe", "flutter_windows.dll", "TianQueCore.exe", "TianQueHelperService.exe")
           foreach ($file in $requiredFiles) {
             $filePath = Join-Path $releaseDir $file
             
-            # 尝试从 libclash 复制缺失的 Helper Service
+            # 拷贝内核 (从 libclash/windows/amd64 拷贝)
+            if ($file -eq "TianQueCore.exe" -and (-not (Test-Path $filePath))) {
+                $coreSrc = "libclash\windows\amd64\TianQueCore.exe"
+                if (Test-Path $coreSrc) {
+                    Copy-Item -Path $coreSrc -Destination $filePath
+                    Write-Host "Successfully copied $file from $coreSrc"
+                }
+            }
+
+            # 拷贝 Helper Service (从 libclash/windows 拷贝)
             if ($file -eq "TianQueHelperService.exe" -and (-not (Test-Path $filePath))) {
-                Write-Warning "$file not found in release dir, attempting to copy locally..."
                 $helperSrc = "libclash\windows\TianQueHelperService.exe"
                 if (Test-Path $helperSrc) {
                     Copy-Item -Path $helperSrc -Destination $filePath
