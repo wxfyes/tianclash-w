@@ -52,10 +52,31 @@ on:
         description: 'Icon Background Color (图标背景色, 如 #FFFFFF)'
         required: false
         default: '#FFFFFF'
+      buildAndroid:
+        description: 'Build Android (构建 Android)'
+        required: false
+        type: boolean
+        default: true
+      buildWindows:
+        description: 'Build Windows (构建 Windows)'
+        required: false
+        type: boolean
+        default: true
+      buildMacOS:
+        description: 'Build macOS (构建 macOS)'
+        required: false
+        type: boolean
+        default: true
+      buildLinux:
+        description: 'Build Linux (构建 Linux)'
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   build-android:
     name: Build Android APK
+    if: ${{ github.event.inputs.buildAndroid == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -197,6 +218,7 @@ jobs:
 
   build-windows:
     name: Build Windows Client
+    if: ${{ github.event.inputs.buildWindows == 'true' }}
     runs-on: Windows-2022
     steps:
       - uses: actions/checkout@v4
@@ -414,6 +436,7 @@ jobs:
 
   build-macos:
     name: Build macOS Client
+    if: ${{ github.event.inputs.buildMacOS == 'true' }}
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -527,6 +550,7 @@ jobs:
 
   build-linux:
     name: Build Linux Client
+    if: ${{ github.event.inputs.buildLinux == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -640,6 +664,7 @@ jobs:
   merge-artifacts:
     name: Merge All Artifacts
     runs-on: ubuntu-latest
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && (github.event.inputs.buildAndroid == 'true' || github.event.inputs.buildWindows == 'true' || github.event.inputs.buildMacOS == 'true' || github.event.inputs.buildLinux == 'true') }}
     needs: [build-android, build-windows, build-macos, build-linux]
     steps:
       - name: Download All Artifacts
@@ -683,7 +708,7 @@ jobs:
   publish-release:
     name: Publish GitHub Release
     needs: merge-artifacts
-    if: ${{ github.event.inputs.publishRelease == 'true' }}
+    if: ${{ !cancelled() && needs.merge-artifacts.result == 'success' && github.event.inputs.publishRelease == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
