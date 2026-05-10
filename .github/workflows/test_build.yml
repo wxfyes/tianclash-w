@@ -60,6 +60,13 @@ jobs:
 
       - name: Build
         run: |
+          # 1. 先给插件生成代码
+          cd plugins/chatwoot_sdk
+          flutter pub get
+          flutter pub run build_runner build --delete-conflicting-outputs
+          cd ../..
+          
+          # 2. 根目录常规操作
           flutter pub get
           flutter pub run build_runner build --delete-conflicting-outputs
           dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="com.tianque.app" --ossUrl="https://example.com" --imgbbApiKey="test"
@@ -91,6 +98,13 @@ jobs:
           
       - name: Build
         run: |
+          # 1. 先给插件生成代码
+          cd plugins/chatwoot_sdk
+          flutter pub get
+          flutter pub run build_runner build --delete-conflicting-outputs
+          cd ../..
+          
+          # 2. 根目录常规操作
           flutter pub get
           flutter pub run build_runner build --delete-conflicting-outputs
           dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="com.tianque.app" --ossUrl="https://example.com" --imgbbApiKey="test"
@@ -121,6 +135,13 @@ jobs:
           
       - name: Build
         run: |
+          # 1. 先给插件生成代码
+          cd plugins/chatwoot_sdk
+          flutter pub get
+          flutter pub run build_runner build --delete-conflicting-outputs
+          cd ../..
+          
+          # 2. 根目录常规操作
           flutter pub get
           flutter pub run build_runner build --delete-conflicting-outputs
           dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="com.tianque.app" --ossUrl="https://example.com" --imgbbApiKey="test"
@@ -182,6 +203,13 @@ jobs:
           
       - name: Build
         run: |
+          # 1. 先给插件生成代码
+          cd plugins/chatwoot_sdk
+          flutter pub get
+          flutter pub run build_runner build --delete-conflicting-outputs
+          cd ../..
+          
+          # 2. 根目录常规操作
           flutter pub get
           flutter pub run build_runner build --delete-conflicting-outputs
           dart run scripts/update_oem.dart --appName="${{ github.event.inputs.appName }}" --binaryName="${{ github.event.inputs.binaryName }}" --packageName="com.tianque.app" --ossUrl="https://example.com" --imgbbApiKey="test"

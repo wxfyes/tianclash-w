@@ -486,6 +486,13 @@ jobs:
           
           echo ">>> Building Flutter App (arm64 assets)..."
           flutter clean
+          
+          # 救命逻辑：插件目录生成代码
+          cd plugins/chatwoot_sdk
+          flutter pub get
+          flutter pub run build_runner build --delete-conflicting-outputs
+          cd ../..
+          
           flutter pub get
           flutter pub run build_runner build --delete-conflicting-outputs
           flutter build macos --release --dart-define=APP_ENV=stable
@@ -511,6 +518,13 @@ jobs:
           
           echo ">>> Building Flutter App (amd64 assets)..."
           flutter clean
+          
+          # 救命逻辑：插件目录生成代码
+          cd plugins/chatwoot_sdk
+          flutter pub get
+          flutter pub run build_runner build --delete-conflicting-outputs
+          cd ../..
+          
           flutter pub get
           flutter pub run build_runner build --delete-conflicting-outputs
           flutter build macos --release --dart-define=APP_ENV=stable
