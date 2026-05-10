@@ -150,9 +150,7 @@ jobs:
           
           # Build arm64
           dart setup.dart macos --out core --arch arm64
-          # 直接在全项目根目录搜，我看你还能往哪躲
-          mkdir -p libclash/macos
-          CORE_PATH=$(find . -name "TianQueCore" | head -n 1)
+          CORE_PATH="core/macos/arm64/TianQueCore"
           echo "Found Core at: $CORE_PATH"
           TARGET_PATH="libclash/macos/TianQueCore"
           mkdir -p libclash/macos
@@ -170,7 +168,7 @@ jobs:
           flutter clean
           flutter pub get
           dart setup.dart macos --out core --arch amd64
-          CORE_PATH_AMD=$(find . -name "TianQueCore" | head -n 1)
+          CORE_PATH_AMD="core/macos/amd64/TianQueCore"
           echo "Found Core at: $CORE_PATH_AMD"
           TARGET_PATH_AMD="libclash/macos/TianQueCore"
           if [ "$CORE_PATH_AMD" != "./$TARGET_PATH_AMD" ] && [ "$CORE_PATH_AMD" != "$TARGET_PATH_AMD" ]; then
