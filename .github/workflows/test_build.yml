@@ -114,7 +114,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Windows-Test-Build
-          path: build/windows/x64/runner/Release/*
+          path: |
+            *.zip
+            *.exe
 
   build-macos:
     name: macOS Build
