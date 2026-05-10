@@ -533,7 +533,6 @@ jobs:
       - name: Build and Package macOS (amd64)
         run: |
           echo ">>> Building amd64 Core..."
-          cd ../../../../../
           flutter clean
           flutter pub get
           dart setup.dart macos --out core --arch amd64
