@@ -18,7 +18,7 @@ on:
       ossUrl:
         description: 'OSS URL (配置接口)'
         required: true
-        default: 'https://oss.tianque.cc/oss_config.txt'
+        default: 'https://oss.tianque.cc/oss_config_v2.txt'
       imgbbApiKey:
         description: 'ImgBB API Key (图床Key)'
         required: true
@@ -305,14 +305,14 @@ jobs:
           }
           
           # 验证关键文件存在
-          $requiredFiles = @("TianQue.exe", "flutter_windows.dll", "FlClashCore.exe", "FlClashHelperService.exe")
+          $requiredFiles = @("TianQue.exe", "flutter_windows.dll", "TianQueCore.exe", "TianQueHelperService.exe")
           foreach ($file in $requiredFiles) {
             $filePath = Join-Path $releaseDir $file
             
             # 尝试从 libclash 复制缺失的 Helper Service
-            if ($file -eq "FlClashHelperService.exe" -and (-not (Test-Path $filePath))) {
+            if ($file -eq "TianQueHelperService.exe" -and (-not (Test-Path $filePath))) {
                 Write-Warning "$file not found in release dir, attempting to copy locally..."
-                $helperSrc = "libclash\windows\FlClashHelperService.exe"
+                $helperSrc = "libclash\windows\TianQueHelperService.exe"
                 if (Test-Path $helperSrc) {
                     Copy-Item -Path $helperSrc -Destination $filePath
                     Write-Host "Successfully copied $file from $helperSrc"
@@ -357,7 +357,7 @@ jobs:
           Write-Host "Final package: $finalZip"
           Write-Host "Final package size: $($finalZipInfo.Length) bytes"
           
-          # 包大小应该至少 50MB（flutter_windows.dll + FlClashCore.exe 等）
+          # 包大小应该至少 50MB（flutter_windows.dll + TianQueCore.exe 等）
           if ($finalZipInfo.Length -lt 50000000) {
             Write-Warning "Package seems too small! Expected > 50MB"
           }
@@ -479,9 +479,9 @@ jobs:
         run: |
           echo ">>> Building arm64 Core..."
           dart setup.dart macos --out core --arch arm64
-          chmod +x libclash/macos/arm64/FlClashCore
+          chmod +x libclash/macos/arm64/TianQueCore
           # Copy to the path Xcode expects
-          cp libclash/macos/arm64/FlClashCore libclash/macos/FlClashCore
+          cp libclash/macos/arm64/TianQueCore libclash/macos/TianQueCore
           
           echo ">>> Building Flutter App (arm64 assets)..."
           flutter clean
@@ -500,9 +500,9 @@ jobs:
         run: |
           echo ">>> Building amd64 Core..."
           dart setup.dart macos --out core --arch amd64
-          chmod +x libclash/macos/amd64/FlClashCore
+          chmod +x libclash/macos/amd64/TianQueCore
           # Copy to the path Xcode expects
-          cp libclash/macos/amd64/FlClashCore libclash/macos/FlClashCore
+          cp libclash/macos/amd64/TianQueCore libclash/macos/TianQueCore
           
           echo ">>> Building Flutter App (amd64 assets)..."
           flutter clean
