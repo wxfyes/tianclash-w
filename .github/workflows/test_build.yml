@@ -161,7 +161,7 @@ jobs:
           flutter build macos --release
           cd build/macos/Build/Products/Release
           hdiutil create -volname "${{ github.event.inputs.binaryName }}" -srcfolder "$(ls -d *.app)" -ov -format UDZO "Test-macOS-arm64.dmg"
-          cd ../../../..
+          cd "$GITHUB_WORKSPACE"
 
           # Build amd64
           flutter clean
