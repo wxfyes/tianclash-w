@@ -509,15 +509,24 @@ jobs:
             --iconBackgroundColor="${{ github.event.inputs.iconBackgroundColor }}"
             
       - name: Build Windows ARM64
+        shell: powershell
         run: |
-          # 核心构建：指定 arm64 架构
-          dart setup.dart windows --arch arm64 --env stable
+          # 1. 编译内核和 Helper 服务 (只到 prep 阶段)
+          dart setup.dart windows --arch arm64 --out prep --env stable
+          
+          # 2. 计算内核哈希 (这是 Windows 版安全启动必须的)
+          $corePath = "libclash\windows\arm64\TianQueCore.exe"
+          $sha256 = (Get-FileHash $corePath -Algorithm SHA256).Hash.ToLower()
+          Write-Host "Core SHA256: $sha256"
+          
+          # 3. 直接调用 Flutter 原生命令编译 ARM64
+          flutter build windows --release --arm64 --dart-define=APP_ENV=stable --dart-define=CORE_SHA256=$sha256
           
       - name: Prepare Final Package
         run: |
           Write-Host "=== Preparing Windows ARM64 Package ==="
           
-          # Flutter 构建输出目录 (注意是 arm64)
+          # 明确指定 Flutter 官方生成的 arm64 Release 目录
           $releaseDir = "build\windows\arm64\runner\Release"
           
           # 检查构建是否成功
