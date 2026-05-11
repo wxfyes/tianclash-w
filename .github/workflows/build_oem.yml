@@ -62,6 +62,11 @@ on:
         required: false
         type: boolean
         default: true
+      buildWindowsArm64:
+        description: 'Build Windows ARM64 (构建 Windows ARM64)'
+        required: false
+        type: boolean
+        default: false
       buildMacOS:
         description: 'Build macOS (构建 macOS)'
         required: false
@@ -434,6 +439,123 @@ jobs:
             ${{ github.event.inputs.binaryName }}-${{ env.APP_VERSION }}-Windows-Setup.exe
           if-no-files-found: warn
 
+  build-windows-arm64:
+    name: Build Windows ARM64 Client
+    if: ${{ github.event.inputs.buildWindowsArm64 == 'true' }}
+    runs-on: Windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: wangn9900/MOMclash
+          token: ${{ secrets.ACCESS_TOKEN }}
+          submodules: recursive
+          ref: main
+      
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.0'
+          cache-dependency-path: |
+            core/go.sum
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-pc-windows-msvc
+      
+      - name: Get Dependencies
+        run: flutter pub get
+        
+      - name: Generate Code for Plugins
+        shell: powershell
+        run: |
+          if (Test-Path "plugins/chatwoot_sdk") {
+            cd plugins/chatwoot_sdk
+            flutter pub get
+            dart run build_runner build --delete-conflicting-outputs
+            cd ../..
+          }
+          
+      - name: Update Version
+        run: dart run scripts/update_version.dart
+
+      - name: Get Version
+        id: get_version
+        shell: bash
+        run: |
+          VERSION=$(grep 'version:' pubspec.yaml | sed 's/version: //')
+          echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Version is $VERSION"
+
+      - name: Update OEM Config
+        run: |
+          dart run scripts/update_oem.dart `
+            --appName="${{ github.event.inputs.appName }}" `
+            --binaryName="${{ github.event.inputs.binaryName }}" `
+            --packageName="${{ github.event.inputs.packageName }}" `
+            --ossUrl="${{ github.event.inputs.ossUrl }}" `
+            --imgbbApiKey="${{ github.event.inputs.imgbbApiKey }}" `
+            --monitorUrl="${{ github.event.inputs.monitorUrl }}" `
+            --monitorKey="${{ github.event.inputs.monitorKey }}" `
+            --backupUrls="${{ github.event.inputs.backupUrls }}" `
+            --fallbackUrl="${{ github.event.inputs.fallbackUrl }}" `
+            --iconPath="${{ github.event.inputs.iconUrl != '' && github.event.inputs.iconUrl || 'assets/images/icon.png' }}" `
+            --iconBackgroundColor="${{ github.event.inputs.iconBackgroundColor }}"
+            
+      - name: Build Windows ARM64
+        run: |
+          # 核心构建：指定 arm64 架构
+          dart setup.dart windows --arch arm64 --env stable
+          
+      - name: Prepare Final Package
+        run: |
+          Write-Host "=== Preparing Windows ARM64 Package ==="
+          
+          # Flutter 构建输出目录 (注意是 arm64)
+          $releaseDir = "build\windows\arm64\runner\Release"
+          
+          # 检查构建是否成功
+          if (-not (Test-Path $releaseDir)) {
+            Write-Error "Release directory not found: $releaseDir"
+            exit 1
+          }
+          
+          # 验证关键文件存在
+          $requiredFiles = @("TianQue.exe", "flutter_windows.dll", "TianQueCore.exe", "TianQueHelperService.exe")
+          foreach ($file in $requiredFiles) {
+            $filePath = Join-Path $releaseDir $file
+            if (-not (Test-Path $filePath)) {
+              Write-Error "Required file not found: $file"
+              exit 1
+            }
+          }
+          
+          # 重命名
+          $binaryName = "${{ github.event.inputs.binaryName }}"
+          if ($binaryName -and $binaryName -ne "" -and $binaryName -ne "TianQue") {
+            $oldExe = Join-Path $releaseDir "TianQue.exe"
+            $newExe = Join-Path $releaseDir "$binaryName.exe"
+            Copy-Item -Path $oldExe -Destination $newExe -Force
+            Remove-Item -Path $oldExe -Force
+          }
+          
+          $finalZip = "${{ github.event.inputs.binaryName }}-${{ env.APP_VERSION }}-Windows-ARM64.zip"
+          Compress-Archive -Path "$releaseDir\*" -DestinationPath $finalZip -Force
+          
+      - name: Upload Windows ARM64 Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.inputs.binaryName }}-${{ env.APP_VERSION }}-Windows-ARM64
+          path: |
+            ${{ github.event.inputs.binaryName }}-${{ env.APP_VERSION }}-Windows-ARM64.zip
+          if-no-files-found: warn
+
   build-macos:
     name: Build macOS Client
     if: ${{ github.event.inputs.buildMacOS == 'true' }}
@@ -664,8 +786,8 @@ jobs:
   merge-artifacts:
     name: Merge All Artifacts
     runs-on: ubuntu-latest
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && (github.event.inputs.buildAndroid == 'true' || github.event.inputs.buildWindows == 'true' || github.event.inputs.buildMacOS == 'true' || github.event.inputs.buildLinux == 'true') }}
-    needs: [build-android, build-windows, build-macos, build-linux]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && (github.event.inputs.buildAndroid == 'true' || github.event.inputs.buildWindows == 'true' || github.event.inputs.buildWindowsArm64 == 'true' || github.event.inputs.buildMacOS == 'true' || github.event.inputs.buildLinux == 'true') }}
+    needs: [build-android, build-windows, build-windows-arm64, build-macos, build-linux]
     steps:
       - name: Download All Artifacts
         uses: actions/download-artifact@v4
