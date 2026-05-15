@@ -16,7 +16,7 @@ on:
         required: true
         default: 'com.tianque.app'
       ossUrl:
-        description: 'OSS URL (配置接口)'
+        description: 'OSS URL (配置接口, 多oss可逗号分隔)'
         required: true
         default: 'https://oss.tianque.cc/oss_config_v2.txt'
       imgbbApiKey:
