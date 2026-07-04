@@ -48,6 +48,15 @@ on:
         required: false
         type: boolean
         default: false
+      releaseNotes:
+        description: 'Release Notes (更新说明/更新日志, 支持换行)'
+        required: false
+        type: string
+        default: |
+          📢 天阙加速 版本更新
+          ⚡ 1. 必更新！必更！必更新！优化连接速度！
+          🔒 2. 优化内核，解决节点全超时假死问题！
+          ⚡ 3. 流畅度优化以及增加mieru新协议，速度更快延迟更低！
       iconBackgroundColor:
         description: 'Icon Background Color (图标背景色, 如 #FFFFFF)'
         required: false
@@ -742,6 +751,7 @@ jobs:
         with:
           tag_name: ${{ env.TAG_NAME }}
           name: ${{ github.event.inputs.appName }} ${{ env.TAG_NAME }}
+          body: ${{ github.event.inputs.releaseNotes }}
           files: ./release/*
           draft: false
           prerelease: false
@@ -753,6 +763,7 @@ jobs:
         with:
           tag_name: ${{ env.TAG_NAME }}
           name: ${{ github.event.inputs.appName }} ${{ env.TAG_NAME }}
+          body: ${{ github.event.inputs.releaseNotes }}
           files: ./release/*
           draft: false
           prerelease: false
