@@ -49,14 +49,10 @@ on:
         type: boolean
         default: false
       releaseNotes:
-        description: 'Release Notes (更新说明/更新日志, 支持换行)'
+        description: 'Release Notes (更新日志：多行请用分号 ; 换行。留空则智能读取 RELEASE_CHANGELOG.md 或最新 Commit)'
         required: false
         type: string
-        default: |
-          📢 天阙加速 版本更新
-          ⚡ 1. 必更新！必更！必更新！优化连接速度！
-          🔒 2. 优化内核，解决节点全超时假死问题！
-          ⚡ 3. 流畅度优化以及增加mieru新协议，速度更快延迟更低！
+        default: ''
       iconBackgroundColor:
         description: 'Icon Background Color (图标背景色, 如 #FFFFFF)'
         required: false
@@ -746,12 +742,60 @@ jobs:
           echo "Detected version: $VERSION"
           echo "TAG_NAME=v$VERSION" >> $GITHUB_ENV
           
+      - name: Checkout Local Repository
+        uses: actions/checkout@v4
+        with:
+          path: tianclash-w
+
+      - name: Checkout MOMclash Repository
+        uses: actions/checkout@v4
+        with:
+          repository: wangn9900/MOMclash
+          token: ${{ secrets.ACCESS_TOKEN }}
+          path: MOMclash
+
+      - name: Generate Release Notes
+        id: gen_notes
+        shell: bash
+        run: |
+          rm -f release_notes.md
+          INPUT_NOTES="${{ github.event.inputs.releaseNotes }}"
+          CLEANED_NOTES=$(echo "$INPUT_NOTES" | xargs)
+          
+          if [ -z "$CLEANED_NOTES" ]; then
+            USE_FILE=true
+          else
+            USE_FILE=false
+          fi
+          
+          if [ "$USE_FILE" = "true" ]; then
+            if [ -f "tianclash-w/RELEASE_CHANGELOG.md" ]; then
+              echo ">>> 使用 tianclash-w 仓库中的 RELEASE_CHANGELOG.md"
+              cat tianclash-w/RELEASE_CHANGELOG.md > release_notes.md
+            elif [ -f "MOMclash/RELEASE_CHANGELOG.md" ]; then
+              echo ">>> 使用 MOMclash 仓库中的 RELEASE_CHANGELOG.md"
+              cat MOMclash/RELEASE_CHANGELOG.md > release_notes.md
+            else
+              echo ">>> 未发现 RELEASE_CHANGELOG.md，自动提取 MOMclash 最近一次 Git 提交信息"
+              cd MOMclash
+              git log -1 --pretty=format:"📢 更新日志：%s%n%b" > ../release_notes.md
+              cd ..
+            fi
+          else
+            echo ">>> 使用网页输入的更新说明"
+            # 智能替换：支持字面量 \n，以及中英文分号自动转为换行
+            echo -e "$INPUT_NOTES" | sed 's/\\n/\n/g' | sed 's/;/\n/g' | sed 's/；/\n/g' > release_notes.md
+          fi
+          
+          echo ">>> 最终 Release Notes 预览："
+          cat release_notes.md
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.TAG_NAME }}
           name: ${{ github.event.inputs.appName }} ${{ env.TAG_NAME }}
-          body: ${{ github.event.inputs.releaseNotes }}
+          body_path: release_notes.md
           files: ./release/*
           draft: false
           prerelease: false
@@ -763,7 +807,7 @@ jobs:
         with:
           tag_name: ${{ env.TAG_NAME }}
           name: ${{ github.event.inputs.appName }} ${{ env.TAG_NAME }}
-          body: ${{ github.event.inputs.releaseNotes }}
+          body_path: release_notes.md
           files: ./release/*
           draft: false
           prerelease: false
