@@ -52,7 +52,7 @@ on:
         description: 'Release Notes (更新日志：多行请用分号 ; 换行。留空则智能读取 RELEASE_CHANGELOG.md 或最新 Commit)'
         required: false
         type: string
-        default: ''
+        default: '📢 天阙加速 版本更新; ⚡ 1. 必更新！优化连接速度！; 🔒 2. 优化内核，解决全超时假死问题！; ⚡ 3. 流畅度优化以及增加mieru新协议，速度更快延迟更低！'
       iconBackgroundColor:
         description: 'Icon Background Color (图标背景色, 如 #FFFFFF)'
         required: false
