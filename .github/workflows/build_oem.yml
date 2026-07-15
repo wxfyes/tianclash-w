@@ -18,7 +18,7 @@ on:
       ossUrl:
         description: 'OSS URL (配置接口, 多oss可逗号分隔)'
         required: true
-        default: 'https://oss.tianque.cc/oss_config_v2.txt'
+        default: 'https://oss.tianque.cc/oss_config_v3.json, https://dydy.tianque.cc/oss_config_v3.json, https://chatwoot.126581.xyz/oss_config_v3.json'
       imgbbApiKey:
         description: 'ImgBB API Key (图床Key)'
         required: true
