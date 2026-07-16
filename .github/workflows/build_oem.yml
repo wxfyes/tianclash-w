@@ -26,7 +26,7 @@ on:
       monitorUrl:
         description: 'Monitor URL (监控Worker地址)'
         required: false
-        default: 'https://kehu0.126581.xyz'
+        default: 'https://kehu-new.126581.xyz'
       monitorKey:
         description: 'Monitor Key (监控验证密钥)'
         required: false
